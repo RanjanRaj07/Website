@@ -211,12 +211,13 @@ app.get('/api/products/:category', async (req, res) => {
 
   try {
     // Fetch product details by category
-    console.log((normalizedCategory=='All'))
     let productQuery
+    let productResult
     if (normalizedCategory == 'All'){
         productQuery = `
          SELECT p_id, p_name, p_category, p_weight, p_image_id
         FROM product`;
+        productResult = await pool.query(productQuery);
     }
     else{
       productQuery = `
@@ -224,8 +225,9 @@ app.get('/api/products/:category', async (req, res) => {
         FROM product
         WHERE LOWER(p_category) = LOWER($1)
       `;
+       productResult = await pool.query(productQuery, [normalizedCategory]);
+      
     }
-    const productResult = await pool.query(productQuery, [normalizedCategory]);
     const products = productResult.rows;
 
     // Fetch image details
