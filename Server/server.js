@@ -17,9 +17,11 @@ const pool = new Pool({
   user: "postgres",
   host: "localhost",
   database: "SaptosiDB",
-  password: "root123",
+  // password: "#Taylor@13",
+  password: 'root123',
   port: 5432,
 });
+
 
 // Route to handle account creation
 app.post("/create-account", async (req, res) => {
@@ -128,16 +130,17 @@ app.get('/api/cart/:userId', async (req, res) => {
   const userId = req.params.userId;
 
   try {
-    // Fetch cart items
-    const cartQuery = 'SELECT p_id FROM cart WHERE u_id = $1';
+    // Fetch cart items with quantity
+    const cartQuery = 'SELECT p_id, quantity FROM cart WHERE u_id = $1';
     const cartResult = await pool.query(cartQuery, [userId]);
-    const productIds = cartResult.rows.map(row => row.p_id);
+    const cartItems = cartResult.rows;
 
-    if (productIds.length === 0) {
+    if (cartItems.length === 0) {
       return res.json([]);
     }
 
     // Fetch product details
+    const productIds = cartItems.map(item => item.p_id);
     const productQuery = `
       SELECT p_id, p_name, p_category, p_weight, p_image_id
       FROM product
@@ -156,18 +159,20 @@ app.get('/api/cart/:userId', async (req, res) => {
     const imageResult = await pool.query(imageQuery, [imageIds]);
     const images = imageResult.rows;
 
-    // Map products to their images
-    const productsWithImages = products.map(product => {
+    // Map products to their images and quantities
+    const productsWithDetails = products.map(product => {
       const image = images.find(img => img.id === product.p_image_id);
+      const cartItem = cartItems.find(item => item.p_id === product.p_id);
       return {
         ...product,
         image: image ? `data:image/jpeg;base64,${image.file_data.toString('base64')}` : null,
+        quantity: cartItem ? cartItem.quantity : null,
       };
     });
     
-    res.json(productsWithImages);
+    res.json(productsWithDetails);
   } catch (error) {
-    console.error('Error fetching wishlist:', error);
+    console.error('Error fetching cart:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
@@ -253,6 +258,56 @@ app.get('/api/products/:category', async (req, res) => {
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Route to add an item to the wishlist, replacing existing item if found
+app.post('/api/wishlist', async (req, res) => {
+  const { u_id, p_id } = req.body;
+
+  try {
+    // Check if the item already exists in the wishlist
+    const checkQuery = 'SELECT * FROM wishlist WHERE u_id = $1 AND p_id = $2';
+    const checkResult = await pool.query(checkQuery, [u_id, p_id]);
+    
+    if (checkResult.rows.length > 0) {
+      // Item already exists, delete it first
+      const deleteQuery = 'DELETE FROM wishlist WHERE u_id = $1 AND p_id = $2';
+      const deleteResult = await pool.query(deleteQuery, [u_id, p_id]);
+    }
+    else{
+      // Add item to the wishlist
+      const insertQuery = 'INSERT INTO wishlist (u_id, p_id) VALUES ($1, $2)';
+      await pool.query(insertQuery, [u_id, p_id]);
+    }
+    res.status(200).json({ message: 'Item added to wishlist successfully' });
+  } catch (error) {
+    console.error('Error adding item to wishlist:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Route to add an item to the wishlist, replacing existing item if found
+app.post('/api/cart', async (req, res) => {
+  const { u_id, p_id, quantity } = req.body;
+  // Check if the item already exists in the wishlist
+  const checkQuery = 'SELECT * FROM cart WHERE u_id = $1 AND p_id = $2';
+  const checkResult = await pool.query(checkQuery, [u_id, p_id]);
+  
+  if (checkResult.rows.length > 0) {
+    res.status(200).json({message: 'Item already added to cart'})
+  }
+  else{
+    try {
+      // Add item to the wishlist
+      const insertQuery = 'INSERT INTO cart (u_id, p_id, quantity) VALUES ($1, $2, $3)';
+      await pool.query(insertQuery, [u_id, p_id, quantity]);
+
+      res.status(200).json({ message: 'Item added to cart' });
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      res.status(500).json({ error :'Internal Server Error' });
+    }
   }
 });
 

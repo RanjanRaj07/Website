@@ -82,7 +82,8 @@ export default function Cart({userData}) {
                 <div className="pl-3 pr-5">
                   <h2 className="text-xl font-medium">{item.p_name}</h2>
                   <p className="text-sm text-stone-700">Category: {item.p_category}</p>
-                  <p className="text-sm text-stone-700">Weight: {item.p_weight}</p>
+                  <p className="text-sm text-stone-700">Weight: {item.p_weight} gms</p>
+                  <p className="text-sm text-stone-700">Quantity: {item.quantity} </p>
                 </div>
               </div>
             ))}
