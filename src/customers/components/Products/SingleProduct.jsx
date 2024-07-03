@@ -3,34 +3,53 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import axios from 'axios';
 
-const handleFavoriteClick = async (product, parsedUserData, setIsFavorite, setShowModal) => {
+const handleFavoriteClick = async (product, parsedUserData, isFavorite, setIsFavorite, setShowModal) => {
+  console.log(parsedUserData)
   if (!parsedUserData) {
-    setShowModal(true)
+    setShowModal(true);
     return;
   }
-  try {
-    const response = await axios.post('http://localhost:5000/api/wishlist', {
-      u_id: parsedUserData.u_id,
-      p_id: product.p_id,
-    });
 
-    if (response.status === 200) {
-      setIsFavorite(true);
-    } else {
-      alert('Failed to add to wishlist.');
-    }
-  } catch (error) {
-    console.error('Error adding to wishlist:', error);
-    alert('Error adding to wishlist.');
-  }
   try {
-    const response = await axios.get(`http://localhost:5000/api/wishlist/${parsedUserData.u_id}`);
+    const response = await axios.get(`http://localhost:5000/wishlist/get-wishlist/${parsedUserData.u_id}`);
     const exists = response.data.some(item => item.p_id === product.p_id);
     setIsFavorite(exists);
+    if (exists) {
+      // If product is in the wishlist, remove it
+      try {
+        const deleteResponse = await axios.delete(`http://localhost:5000/wishlist/delete-item/${parsedUserData.u_id}/${product.p_id}`);
+        if (deleteResponse.status === 200) {
+          setIsFavorite(false);
+        } else {
+          alert('Failed to remove from wishlist.');
+        }
+      } catch (error) {
+        console.error('Error removing from wishlist:', error);
+      }
+    } else {
+      // If product is not in the wishlist, add it
+      try {
+        const addResponse = await axios.post('http://localhost:5000/wishlist/add-item', {
+          u_id: parsedUserData.u_id,
+          p_id: product.p_id,
+        });
+        if (addResponse.status === 200) {
+          setIsFavorite(true);
+        } else {
+          alert('Failed to add to wishlist.');
+        }
+      } catch (error) {
+        console.error('Error adding to wishlist:', error);
+        alert('Error adding to wishlist.');
+      }
+    }
   } catch (error) {
     console.error('Error fetching wishlist:', error);
+  } finally {
+    console.log('handleFavoriteClick function executed');
   }
-}
+};
+
 
 const handleAddToCart = async (product, parsedUserData, quantity, setShowModal) => {
   
@@ -40,7 +59,7 @@ const handleAddToCart = async (product, parsedUserData, quantity, setShowModal) 
   }
   
   try {
-    const response = await axios.post('http://localhost:5000/api/cart', {
+    const response = await axios.post('http://localhost:5000/cart/add-item', {
       u_id: parsedUserData.u_id,
       p_id: product.p_id,
       quantity: quantity
@@ -79,7 +98,7 @@ const SingleProduct = ({ product, isFavorite, setIsFavorite, userData, setShowMo
       className='absolute top-12 right-14 z-8'
       onClick={(e) => {
         e.stopPropagation(); // Prevent triggering the product click
-        handleFavoriteClick(product, parsedUserData, setIsFavorite, setShowModal);
+        handleFavoriteClick(product, parsedUserData, setIsFavorite, setShowModal, isFavorite);
       }}
       >
       {isFavorite ? (
@@ -111,9 +130,8 @@ const SingleProduct = ({ product, isFavorite, setIsFavorite, userData, setShowMo
             className='bg-stone-600 text-white font-semibold py-2 px-6 rounded-sm' 
             onClick={()=>{handleAddToCart(product, parsedUserData, quantity, setShowModal)}}
             >Add to cart</button>
-          
           </div>
-        
+
       </div>
      </div>
     </div>

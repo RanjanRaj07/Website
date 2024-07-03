@@ -17,7 +17,7 @@ const handleFavoriteClick = async (product, parsedUserData, setIsFavorite, setSh
   } 
 
   try {
-    const response = await axios.post('http://localhost:5000/api/wishlist', {
+    const response = await axios.post('http://localhost:5000/wishlist/add-item', {
       u_id: parsedUserData.u_id,
       p_id: product.p_id,
     });
@@ -32,7 +32,7 @@ const handleFavoriteClick = async (product, parsedUserData, setIsFavorite, setSh
     alert('Error adding to wishlist.');
   }
   try {
-    const response = await axios.get(`http://localhost:5000/api/wishlist/${parsedUserData.u_id}`);
+    const response = await axios.get(`http://localhost:5000/wishlist/get-wishlist/${parsedUserData.u_id}`);
     const exists = response.data.some(item => item.p_id === product.p_id);
     setIsFavorite(exists);
   } catch (error) {
@@ -42,11 +42,11 @@ const handleFavoriteClick = async (product, parsedUserData, setIsFavorite, setSh
 
 const ProductCard = ({ product , setCurrentView, setProduct, userData, setShowModal, isFavorite, setIsFavorite }) => {
   const parsedUserData = typeof userData === 'string' ? JSON.parse(userData) : userData;
-  const u_id = parsedUserData.u_id;
+  const u_id = parsedUserData ? parsedUserData.u_id : '';
 
   const fetchWishlist = async (productId) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/wishlist/${u_id}`);
+      const response = await axios.get(`http://localhost:5000/wishlist/get-wishlist/${u_id}`);
       const exists = response.data.some(item => item.p_id === productId);
       setIsFavorite(exists);
     } catch (error) {
@@ -84,7 +84,7 @@ const ProductCard = ({ product , setCurrentView, setProduct, userData, setShowMo
         </div>
         <div className='flex items-center space-x-2 mt-2'>
           <p className='font-semibold text-gray-400 text-sm'>{product.p_category}</p>
-          <p className='font-semibold text-gray-400 text-sm'>{product.p_weight}</p>
+          <p className='font-semibold text-gray-400 text-sm'>{product.p_weight} gms</p>
         </div>
       </div>
     </div>

@@ -12,7 +12,7 @@ export default function Wishlist( {userData}) {
     const fetchWishlist = async () => {
     
       try {
-        const response = await axios.get(`http://localhost:5000/api/wishlist/${u_id}`);
+        const response = await axios.get(`http://localhost:5000/wishlist/get-wishlist/${u_id}`);
         setWishlistItems(response.data);
         setLoading(false);
       } catch (error) {
@@ -25,7 +25,7 @@ export default function Wishlist( {userData}) {
 
   const handleDeleteItem = async (itemId) => {
     try {
-      const response = await axios.delete(`http://localhost:5000/api/wishlist/${u_id}/${itemId}`);
+      const response = await axios.delete(`http://localhost:5000/wishlist/delete-item/${u_id}/${itemId}`);
       if (response.status === 200) {
         // Update wishlistItems after successful delete
         const updatedWishlist = wishlistItems.filter(item => item.p_id !== itemId);

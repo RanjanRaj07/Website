@@ -15,7 +15,7 @@ const Products = ({ setCurrentView, category , setCategory ,setProduct, userData
 
   const fetchProductsByCategory = async (category) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/products/${category}`);
+      const response = await axios.get(`http://localhost:5000/products/${category}`);
       setProducts(response.data);
     } catch (error) {
       console.error('Error fetching products:', error);
